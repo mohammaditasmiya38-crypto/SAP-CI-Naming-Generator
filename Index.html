@@ -1,0 +1,558 @@
+<!DOCTYPE html> 
+<html lang="en"> 
+<head> 
+<meta charset="UTF-8" /> 
+<meta name="viewport" content="width=device-width, initial-scale=1.0" /> 
+<title>SAP CI Naming Generator — Combobox Dropdowns</title> 
+<style> 
+:root{--bg1:#e0e7ff;--bg2:#f1f5ff;--card:rgba(255,255,255,.85);--border:rgba(255,255,255,.4);--label:#475569;--text:#1e293b;--muted:#64748b;--primary:#4f46e5;--primary-dark:#4338ca;--radius:16px;--shadow:0 8px 25px rgba(0,0,0,.15)} 
+*{box-sizing:border-box} 
+body{margin:0;font-family:"Segoe UI",Roboto,Arial,sans-serif;background:linear-gradient(135deg,var(--bg1),var(--bg2));color:var(--text)} 
+.header{padding:40px 20px;text-align:center;color:#fff;background:linear-gradient(135deg,#6366f1,#4f46e5);box-shadow:0 3px 15px rgba(0,0,0,.25)} 
+.header h1{margin:0;font-size:28px} 
+.container{max-width:900px;margin:40px auto;padding:0 20px} 
+.card{background:var(--card);backdrop-filter:blur(10px);border-radius:var(--radius);border:1px solid var(--border);padding:28px;box-shadow:var(--shadow);margin-bottom:24px} 
+label{font-size:16px;font-weight:600;margin-bottom:6px;display:block;color:var(--label)}
+.vgac-small {
+    font-size: 11px;
+    color: #6b7280; /* soft grey */
+    font-style: italic;
+} 
+select,input{width:100%;padding:13px;border-radius:12px;font-size:15px;border:1px solid #d4d8e6;background:#f8faff;transition:.2s} 
+select:focus,input:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(99,102,241,.25);outline:none} 
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:31px} 
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px} 
+#sender,#receiver{text-transform:capitalize} 
+.btn{padding:12px 22px;font-size:15px;border-radius:12px;cursor:pointer;border:none;transition:.2s} 
+.btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{background:var(--primary-dark)} 
+.btn-outline{background:transparent;border:1px solid #cbd5e1}.btn-outline:hover{background:#f1f5f9} 
+.output-box {
+    background: #e8edff;
+    color: #1e293b;
+    padding: 20px;
+    border-radius: 16px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 1px;
+
+    display: block;           
+    white-space: nowrap;     
+    overflow-x: auto;         
+    width: 100%;              
+    box-sizing: border-box;   
+}
+.hint{margin-top:8px;font-size:12px;color:var(--muted)} 
+.note{margin-top:6px;font-size:12px;color:var(--muted)}
+.cm-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 31px; /* matches your .grid-2 spacing */
+} 
+/* --- Combobox (input with dropdown like your mock) --- */ 
+.combo{position:relative} 
+.combo-input{width:100%;padding-right:44px} 
+.combo-btn{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:32px;height:32px;border:1px solid #d4d8e6;border-radius:8px;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center} 
+.combo-btn:after{content:"\25BC";font-size:12px;color:#475569} 
+.combo-list{position:absolute;left:0;right:0;top:calc(100% + 6px);max-height:220px;overflow:auto;background:#fff;border:1px solid #e5e7eb;border-radius:12px;box-shadow:var(--shadow);padding:6px 0;z-index:10;display:none} 
+.combo.open .combo-list{display:block} 
+.combo-item{padding:10px 14px;cursor:pointer;font-size:14px} 
+.combo-item:hover,.combo-item.active{background:#eef2ff} 
+.combo-empty{padding:10px 14px;color:#94a3b8;font-size:13px} 
+.hidden{display:none}
+.hidden-row { display: none !important;}
+</style> 
+</head> 
+<body> 
+<div class="header"><h1>SAP CI Naming Generator</h1><p>Generate naming conventions for Packages, iFlows, Channels & Mappings etc</p>
+<p style="font-size:14px; margin-top:8px; opacity:0.9;">
+    Please have a look at the syntax below, then select the options.
+</p></div> 
+
+
+
+<div class="container"> 
+ <div class="card"> 
+ <div class="grid-2"> 
+ <div> 
+ <label>Artifact Type</label> 
+ <select id="type"> 
+ <option value="">Select your Artifact</option> 
+ <option value="Package">Package</option><option>Integration Flow</option><option>Value Mapping</option><option>OData Service</option><option>Content Modifier</option><option>Filter</option><option>Message Digest</option><option>Process</option><option>Local Process</option>
+ <option>Request-Reply</option><option>Content Enricher</option><option>Process Call</option><option>Aggregator</option><option>Gather</option><option>Join</option><option>Sequential Multicasting</option><option>Parallel Multicasting</option><option>Router</option>
+
+ </select> 
+ <div id="hint" class="hint"></div> 
+ </div> 
+ <div> 
+ <label>Output Style</label> 
+ <select id="style"><option>Lowercase</option></select> 
+ </div> 
+ </div> 
+ <!-- Business Unit combobox --> 
+ <div style="display:flex;align-items:center;gap:12px;margin-top:16px"><label style="margin:0;">TD/BA/GF</label><span style="margin-left:auto;padding:12px;font-size:12px;color:#475569"><input id="useGlobal" type="checkbox">Use Global</span></div> 
+ <div class="combo" id="buCombo"> 
+ <input class="combo-input" id="buInput" placeholder="Start typing or pick from suggestions..." autocomplete="off" /> 
+ <button class="combo-btn" type="button" tabindex="-1" aria-label="Toggle business unit list"></button> 
+ <div class="combo-list" id="buList"></div> 
+ </div> 
+ <!--<div class="note">Tip: You can pick a BU from the list or type your own.</div>-->
+ <!-- Business Process combobox (depends on BU) --> 
+ <label style="margin-top:16px;">Business Process</label> 
+ <div class="combo" id="bpCombo"> 
+ <input class="combo-input" id="bpInput" placeholder="Start typing or suggestions change with TD/BA/GF..." autocomplete="off" /> 
+ <button class="combo-btn" type="button" tabindex="-1" aria-label="Toggle business process list"></button> 
+ <div class="combo-list" id="bpList"></div> 
+ </div> 
+ <div id="senderReceiverGroup" class="grid-2" >
+
+   
+        
+<!-- Sender Combobox -->
+	<div>
+		<label>Sender <span class="vgac-small">(as per VGAC)</span></label>
+		<div class="combo" id="senderCombo">
+			<input class="combo-input" id="senderInput" placeholder="Type or select sender..." autocomplete="off" />
+			<button class="combo-btn" type="button"></button>
+			<div class="combo-list" id="senderList"></div>
+		</div>
+	</div>
+
+
+    
+<!-- Receiver Combobox -->
+	<div>
+		<label>Receiver <span class="vgac-small">(as per VGAC)</span></label>
+		<div class="combo" id="receiverCombo">
+			<input class="combo-input" id="receiverInput" placeholder="Type or select receiver..." autocomplete="off" />
+			<button class="combo-btn" type="button"></button>
+			<div class="combo-list" id="receiverList"></div>
+		</div>
+	</div>
+
+</div> 
+<div id="descBlock">
+ <label style="margin-top:16px;">Interface Description</label> 
+ <input id="desc" placeholder="Invoicing, AccountInfo" /> </div>
+ <!-- CHANNEL FIELDS --> 
+ <div id="contentFields" class="cm-row" style="margin-top:16px; display:none;"> 
+ <div> 
+ <label>Content</label> 
+ <select id="content"><option>Property</option><option>Header</option><option>Body</option></Select>
+ </div> 
+
+ <div> 
+ <label>Description</label> 
+ <input id="object" placeholder="Enter the description" /> 
+ </div> 
+ </div> 
+ <div style="margin-top:22px; display:flex; gap:14px;"> 
+ <button class="btn btn-primary" type="button" onclick="copyText()">Copy</button> 
+ <button class="btn btn-outline" type="button" onclick="resetForm()">Reset</button> 
+ </div> 
+ </div> 
+ <div class="card"><div class="output-box"><span id="output">—</span></div></div> 
+</div> 
+<script> 
+// ====== Helpers ====== 
+const PARTY_OPTIONS = [
+ 'SuccessFactors','SAPVGMF','BusMaster','VGHQBlackLine','SAPVGMF2.0','TM1','OneDigitalCore','VGCS','VITBS',
+ 'SAPAribaSourcing','SAPAribaBuying','SAPCBW','SCOPE','PARTSLINQCRM','SparePartsCore','PARTSLINQSCM','PARTSLINQBW','VCEMOM','MIV',
+ 'CreditPortal','VGSAPHRsolution','LESVC','BusMaster@Nova','SAPSIPRE','SAP@Prevost','SCOREFinancial','OCTOSCS','OCTOCPLV','PartnerDistribution','SAPBRIM'
+];
+// ====== Helpers ======
+function firstLetterUpper(text){ if(!text) return ""; return text.charAt(0).toUpperCase()+text.slice(1); } 
+function toFlatUpper(text){ return (text || "").replace(/\s+/g,"").toUpperCase(); }
+ 
+function toCamelCase(text){
+  return text
+    .toLowerCase()
+    .split(" ")
+    .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}
+
+function normalizeName(name, style){
+  // common cleanup: non-alnum -> underscore, collapse multiple underscores
+  let out = name.replace(/[^A-Za-z0-9]+/g, '_').replace(/_+/g, '_');
+  if (style === 'UPPERCASE') return out.toUpperCase();
+  // For Lower_case, DO NOT force uppercase. Keep mixed case parts as authored.
+  return out;
+}
+
+function toggleDescOnly() {
+    const type = document.getElementById("type").value;
+    const descOnly = [
+        "Process","Encoder","Decoder","Content Modifier","Value Mapping","Local Process","Message Digest","Filter",
+        "Request-Reply","Content Enricher","Process Call",
+        "Aggregator","Gather","Join","Router","Parallel Multicasting","Sequential Multicasting"
+    ];
+
+    const onlyDesc = descOnly.includes(type);
+
+    // 1. TD/BA/GF + Use Global row
+    
+	const tdLabel = document.querySelector("label[style='margin:0;']");
+	if (tdLabel && tdLabel.parentElement) {
+		tdLabel.parentElement.style.display = onlyDesc ? "none" : "flex";
+	}
+
+
+    // 2. BU Combo
+    const bu = document.getElementById("buCombo");
+    if (bu) bu.style.display = onlyDesc ? "none" : "block";
+
+    // 3. Business Process label
+   
+	const bpLabels = document.querySelectorAll("label");
+		bpLabels.forEach(l => {
+			if (l.textContent.trim() === "Business Process") {
+				l.style.display = onlyDesc ? "none" : "block";
+			}
+		});
+
+
+    // 4. Business Process combo
+    const bp = document.getElementById("bpCombo");
+    if (bp) bp.style.display = onlyDesc ? "none" : "block";
+	
+	
+
+    // 5. Sender + Receiver group
+    const sr = document.getElementById("senderReceiverGroup");
+	if(sr){
+		if (type === "Package") {
+			sr.style.display = "none";
+		} else {
+			sr.style.display = onlyDesc ? "none" : "grid";
+		}
+	}
+
+
+    // 6. Channel block — ALWAYS hide for desc-only
+    // Hide description for Content Modifier
+	const descBlock = document.getElementById("descBlock");
+		if (descBlock) {descBlock.style.display = (type === "Content Modifier") ? "none" : "block";
+}
+}
+
+function toggleSenderReceiver() {
+    const type = document.getElementById("type").value;
+    const group = document.getElementById("senderReceiverGroup");
+
+    // Artifact types where Sender/Receiver must NEVER appear
+    const hide = [
+        "Package",                // ← THIS is the fix
+        "Value Mapping",
+        "Content Modifier",
+        "Message Digest",
+        "Process",
+        "Local Process",
+        "Filter",
+        "Decoder",
+        "Encoder",
+        "Aggregator",
+        "Gather",
+        "Join",
+        "Sequential Multicasting",
+        "Parallel Multicasting",
+        "Router",
+        "Request-Reply",
+        "Content Enricher",
+        "Process Call"
+    ];
+
+    if (group) {
+        group.style.display = hide.includes(type) ? "none" : "grid";
+    }
+}
+
+function toggleContentFields(){
+  const type = document.getElementById("type").value;
+  const block = document.getElementById("contentFields");
+
+  if (type === "Content Modifier") {
+      block.style.display = "grid";
+  } else {
+      block.style.display = "none";
+  }
+}
+
+
+
+
+
+
+function setHint(type){ 
+  const hints={
+    'Package':'VG_<TD/BA/GF>_<BusinessProcess>_<Desc>',
+    'Integration Flow':'IF_<TD/BA/GF>_<BusinessProcess>_<SND>_To_<RCV>_<Desc>',
+    'OData Service':'OD_<TD/BA/GF>_<BusinessProcess>_<SND>_To_<RCV>_<Desc>',
+    'Value Mapping':'VM_<Desc>',
+    'Filter':'FT_<Desc>',
+    'Message Digest':'MD_<Desc>',
+	'Request-Reply': 'RR_<Desc>',
+	'Content Enricher':'CE_<Desc>',
+	'Process Call':'PC_<Desc>',
+    'Aggregator': 'AG_<Desc>',
+    'Gather': 'Gather_<Desc>',
+    'Join': 'Join_<Desc>',
+    'Sequential Multicasting': 'SM_<Desc>',
+    'Parallel Multicasting': 'PM_<Desc>',
+    'Router': 'Route_<Condition>',
+	'Process':'IP_<Desc>',
+    'Local Process':'LIP_<Desc>',
+    'Content Modifier':'CM_<Header/Property/Body>_<Desc>'
+  }; 
+  document.getElementById('hint').textContent = hints[type] || '';
+} 
+
+// ====== Data ======
+const BU_OPTIONS=[ 'GroupFinance','VCE','VolvoTrucks','MackTrucks','RenaultTrucks','VolvoBuses','VolvoPenta','VolvoFinancialServices','DTO','GroupP&C','TTI','VolvoEnergy','VolvoAutonomousSolutions','GroupCommunication','GroupL&C','GroupStrategicOffices']; 
+const BU_PROCESSES={ 
+  'GroupFinance':['OrderToCash','RecordToReport','PurchaseToPay','DesignToOperate','SourceToPay','PlanToProduce','ClaimToResponse','PlanToRelease','PlanToControl','PlanToRepair','ProcureToRecord'], 
+  'VCE':['OrderToCash','ProcureToPay','DesignToOperate','RecordToReport','SourceToPay','PlanToProduce','ClaimToResponse','PlanToRelease','RecordToReport','PlanToControl','PlanToRepair'], 
+  'VolvoTrucks':['CompleteKnockDown','CompleteBuildupUnit','MakeToOrder','MakeToStock','DesignToOperate','OrderToCash','SourceToPay','PlanToProduce','ClaimToResponse','PlanToRelease','RecordToReport','PlanToControl','PlanToRepair','ProcureToRecord'], 
+  'MackTrucks': ['DesignToOperate','OrderToCash','SourceToPay','PlanToProduce','ClaimToResponse','PlanToRelease','RecordToReport','PlanToControl','PlanToRepair','ProcureToRecord'], 
+  'RenaultTrucks': ['DesignToOperate','OrderToCash','SourceToPay','PlanToProduce','ClaimToResponse','PlanToRelease','RecordToReport','PlanToControl','PlanToRepair','ProcureToRecord'], 
+  'VolvoBuses': ['DesignToOperate','OrderToCash','SourceToPay','PlanToProduce','ClaimToResponse','PlanToRelease','RecordToReport','PlanToControl','PlanToRepair','ProcureToRecord'], 
+  'VolvoPenta': ['DesignToOperate','OrderToCash','SourceToPay','PlanToProduce','ClaimToResponse','PlanToRelease','RecordToReport','PlanToControl','PlanToRepair','ProcureToRecord'], 
+  'VolvoFinancialServices': ['DesignToOperate','OrderToCash','SourceToPay','PlanToProduce','ClaimToResponse','PlanToRelease','RecordToReport','PlanToControl','PlanToRepair','ProcureToRecord'], 
+  'DTO': ['DesignToOperate','OrderToCash','SourceToPay','PlanToProduce','ClaimToResponse','PlanToRelease','RecordToReport','PlanToControl','PlanToRepair','ProcureToRecord'], 
+  'GroupP&C': ['DesignToOperate','OrderToCash','SourceToPay','PlanToProduce','ClaimToResponse','PlanToRelease','RecordToReport','PlanToControl','PlanToRepair','ProcureToRecord'],
+  'TTI':['DesignToOperate','OrderToCash','SourceToPay','PlanToProduce','ClaimToResponse','PlanToRelease','RecordToReport','PlanToControl','PlanToRepair','ProcureToRecord'],
+  'VolvoEnergy':['DesignToOperate','OrderToCash','SourceToPay','PlanToProduce','ClaimToResponse','PlanToRelease','RecordToReport','PlanToControl','PlanToRepair','ProcureToRecord'],
+  'VolvoAutonomousSolutions':['DesignToOperate','OrderToCash','SourceToPay','PlanToProduce','ClaimToResponse','PlanToRelease','RecordToReport','PlanToControl','PlanToRepair','ProcureToRecord'],
+  'GroupCommunication':['DesignToOperate','OrderToCash','SourceToPay','PlanToProduce','ClaimToResponse','PlanToRelease','RecordToReport','PlanToControl','PlanToRepair','ProcureToRecord'],
+  'GroupL&C':['DesignToOperate','OrderToCash','SourceToPay','PlanToProduce','ClaimToResponse','PlanToRelease','RecordToReport','PlanToControl','PlanToRepair','ProcureToRecord'],
+  'GroupStrategicOffices':['DesignToOperate','OrderToCash','SourceToPay','PlanToProduce','ClaimToResponse','PlanToRelease','RecordToReport','PlanToControl','PlanToRepair','ProcureToRecord']
+}; 
+const BU_ALIASES={ 'groupfinance':'GroupFinance','groupfinanace':'GroupFinance','vce':'VCE','volvotrucks':'VolvoTrucks','volvo trucks':'VolvoTrucks' }; 
+
+// ====== Combobox factory ======
+function makeCombo(rootId, inputId, listId, options){ 
+  const root=document.getElementById(rootId), input=document.getElementById(inputId), list=document.getElementById(listId); 
+  let items=[...options]; let active=-1; let open=false; 
+  function render(filter=''){ 
+    const q=filter.trim().toLowerCase(); 
+    const filtered=items.filter(x=>!q || x.toLowerCase().includes(q)); 
+    list.innerHTML=''; 
+    if(filtered.length===0){ list.innerHTML='<div class="combo-empty">No matches</div>'; return; } 
+    filtered.forEach((text,idx)=>{ 
+      const div=document.createElement('div'); 
+      div.className='combo-item'+(idx===active?' active':''); 
+      div.textContent=text; 
+      div.addEventListener('mousedown',e=>{ e.preventDefault(); select(text); }); 
+      list.appendChild(div); 
+    }); 
+  } 
+  function openList(){ root.classList.add('open'); open=true; render(''); } 
+  function closeList(){ root.classList.remove('open'); open=false; active=-1; } 
+  function select(val){ input.value=val; input.dispatchEvent(new Event('change')); closeList(); } 
+  // events 
+  root.querySelector('.combo-btn').addEventListener('click',()=>{ open?closeList():openList(); input.focus(); }); 
+  input.addEventListener('focus',()=> openList('')); 
+  input.addEventListener('click',()=> openList('')); 
+  input.addEventListener('keydown',e=>{ 
+    const nodes=[...list.querySelectorAll('.combo-item')]; 
+    if(e.key==='ArrowDown'){ e.preventDefault(); if(!open) openList(); active=Math.min((active+1),(nodes.length-1)); highlight(nodes); } 
+    else if(e.key==='ArrowUp'){ e.preventDefault(); active=Math.max((active-1),0); highlight(nodes); } 
+    else if(e.key==='Enter'){ if(open){ e.preventDefault(); const t=nodes[active]?.textContent || input.value; select(t); } } 
+    else if(e.key==='Escape'){ closeList(); } 
+  }); 
+  function highlight(nodes){ nodes.forEach(n=>n.classList.remove('active')); if(active>=0 && nodes[active]){ nodes[active].classList.add('active'); nodes[active].scrollIntoView({block:'nearest'}); } } 
+  document.addEventListener('click',e=>{ if(!root.contains(e.target)) closeList(); }); 
+  // public API 
+  return { 
+    setItems(arr){ items=[...arr]; render(input.value); }, 
+    get value(){ return input.value; }, 
+    set value(v){ input.value=v; }, 
+    onChange(fn){ input.addEventListener('change', fn); }, 
+    focus(){ input.focus(); } 
+  } 
+} 
+
+// Build BU combo
+const buCombo = makeCombo('buCombo','buInput','buList',BU_OPTIONS); 
+// Build BP combo (starts empty)
+const bpCombo = makeCombo('bpCombo','bpInput','bpList',[]); 
+
+const senderCombo = makeCombo('senderCombo','senderInput','senderList',PARTY_OPTIONS);
+const receiverCombo = makeCombo('receiverCombo','receiverInput','receiverList',PARTY_OPTIONS);
+senderCombo.onChange(() => {
+    generateName();
+    senderCombo.setItems(PARTY_OPTIONS);
+});
+
+receiverCombo.onChange(() => {
+    generateName();
+    receiverCombo.setItems(PARTY_OPTIONS);
+});
+
+// When BU changes, repopulate processes
+buCombo.onChange(()=>{
+  const raw=buCombo.value; 
+  const norm=(raw || '').toLowerCase(); 
+  const canonical=BU_ALIASES[norm] || raw; // tolerate aliases/typos 
+  const options = BU_PROCESSES[canonical] || []; 
+  bpCombo.setItems(options); 
+  generateName(); 
+}); 
+
+// Also update name when BP changes
+bpCombo.onChange(()=> generateName()); 
+
+// ====== Name generation & others ======
+
+
+
+function generateName(){
+  const type = document.getElementById('type').value;
+  if (type === "Package") {
+      const sr = document.getElementById("senderReceiverGroup");
+      if (sr) sr.style.display = "none";
+  }
+  const style = document.getElementById('style').value;
+  const useGlobal = document.getElementById('useGlobal')?.checked ?? false;
+
+  // Hide/show BU when Global
+  const buWrap = document.getElementById('buCombo');
+  if (buWrap) buWrap.classList.toggle('hidden', !!useGlobal);
+
+  // Raw user inputs — NO case modification
+  const BU   = useGlobal ? 'Global' : (buCombo.value || 'Global');
+  const PROC = bpCombo.value || '';
+  const SND  = senderCombo.value?.trim() || '';
+  const RCV  = receiverCombo.value?.trim() || '';
+  const DESC = document.getElementById('desc').value || '';
+
+  const Content   = document.getElementById('content')?.value;
+  const OBJECT    = document.getElementById('object')?.value || '';
+
+  // Prefix for Integration Flow (Based on screenshot)
+  const IF_PREFIX = 'If';
+
+  let name = '—';
+
+  if (type === 'Integration Flow') {
+    const parts = [IF_PREFIX, BU];
+    if (PROC) parts.push(PROC);
+
+    if (SND || RCV) {
+      const sndPart = SND || 'Src';
+      const rcvPart = RCV || 'Tgt';
+      parts.push(`${sndPart}_To_${rcvPart}`);
+    }
+
+    name = parts.join('_');
+    if (DESC) name += `_${DESC}`;
+  }
+  else {
+    switch (type){
+      case 'Package': 
+        name = `VG_${BU}_${PROC}${DESC ? "_" + DESC : ""}`;
+        break;
+      case 'OData Service': 
+        name = `OD_${BU}_${PROC}_${SND}_To_${RCV}${DESC ? "_" + DESC : ""}`;
+        break;
+      case 'Value Mapping': 
+        name = `VM_${DESC || 'Desc'}`; 
+        break;
+      
+      
+     
+      case 'Decoder': 
+        name = `DC_${SND || 'Base64'}_${PROC || DESC || 'Desc'}`;
+        break;
+      case 'Encoder': 
+        name = `EC_${SND || 'Base64'}_${PROC || DESC || 'Desc'}`;
+        break;
+      case 'Filter': 
+        name = `FT_${PROC || DESC || 'Desc'}`;
+        break;
+      case 'Message Digest': 
+        name = `MD_${PROC || DESC || 'Desc'}`;
+        break;
+      case 'Process': 
+        name = `IP_${PROC || DESC || 'Desc'}`;
+        break;
+      case 'Local Process': 
+        name = `LIP_${PROC || DESC || 'Desc'}`;
+        break;
+      case 'Request-Reply': 
+        name = `RR_${DESC || PROC || 'Desc'}`;
+        break;
+      case 'Content Enricher': 
+        name = `CE_${DESC || PROC || 'Desc'}`;
+        break;
+      case 'Process Call': 
+        name = `PC_${DESC || PROC || 'Desc'}`;
+        break;
+      case 'Aggregator': 
+        name = `AG_${PROC || DESC || 'Desc'}`;
+        break;
+      case 'Gather': 
+        name = `Gather_${PROC || DESC || 'Desc'}`;
+        break;
+      case 'Join': 
+        name = `Join_${PROC || DESC || 'Desc'}`;
+        break;
+      case 'Sequential Multicasting': 
+        name = `SM_${PROC || DESC || 'Desc'}`;
+        break;
+      case 'Parallel Multicasting': 
+        name = `PM_${PROC || DESC || 'Desc'}`;
+        break;
+      case 'Router': 
+        name = `Route_${DESC || PROC || 'Condition'}`;
+        break;
+      case 'Content Modifier': 
+        name = `CM_${Content}_${OBJECT || 'Desc'}`;
+        break;
+      default:
+        name = `IF_${BU}_${PROC}${DESC ? "_" + DESC : ""}`;
+        break;
+    }
+  }
+
+  // Style handling
+  if (style === 'UPPERCASE'){
+    name = name.toUpperCase();
+  }
+
+  document.getElementById('output').textContent = name;
+  setHint(type);
+}
+
+// re-generate on changes
+['type','style','sender','receiver','desc','content','object','useGlobal'].forEach(id=>{
+  const el=document.getElementById(id); 
+  if(el){ ['input','change'].forEach(evt=> el.addEventListener(evt,()=>{ generateName(); 
+  toggleContentFields();
+  toggleSenderReceiver();
+  toggleDescOnly();
+  })); } 
+});
+
+function copyText(){ 
+  const v=document.getElementById('output').textContent; 
+  if(v&&v!=='—'){ navigator.clipboard.writeText(v); alert('Copied: '+v);} 
+}
+function resetForm(){ 
+  document.querySelectorAll('input').forEach(i=> i.value=''); 
+  document.querySelectorAll('select').forEach(s=> s.selectedIndex=0); 
+  buCombo.setItems(BU_OPTIONS); 
+  bpCombo.setItems([]); 
+  document.getElementById('output').textContent='—'; 
+  toggleContentFields(); 
+  setHint(''); 
+  
+}
+toggleContentFields(); 
+generateName();
+toggleSenderReceiver();
+toggleDescOnly();
+
+</script>
+</body> 
+</html>
